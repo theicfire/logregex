@@ -637,7 +637,11 @@ function ex9() {
   T00 dog is big and black
   T40 color is black
   T60 cat is small and white
-  T40 color is orange
+  T80 color is orange
+  T80 color is white
+  T80 color is purple
+  T80 color is white
+  T80 size is small
   `;
   const s1 = "dog is (.*) and (.*)";
   const s2 = "size is {}";
@@ -650,6 +654,21 @@ function ex9() {
     lre.matchAllRepeat();
     lre.match("color is {}", "<20s", [group.at(1)]);
   });
+  true_tests.push((lre: LogRegex) => {
+    lre.matchAllRepeat();
+    const group = lre.match("cat is (.*) and (.*)");
+    lre.matchAllRepeat();
+    lre.match("color is {}", "<80s", [group.at(1)]);
+  });
+  true_tests.push((lre: LogRegex) => {
+    lre.matchAllRepeat();
+    lre.match("dog is (.*) and (.*)");
+    lre.matchAllRepeat();
+    const group2 = lre.match("cat is (.*) and (.*)");
+    lre.matchAllRepeat();
+    lre.match("color is {}", "<20s", [group2.at(1)]);
+    lre.match("size is {}", "<20s", [group2.at(0)]);
+  });
 
   const false_tests = [];
   false_tests.push((lre: LogRegex) => {
@@ -660,7 +679,9 @@ function ex9() {
   });
   false_tests.push((lre: LogRegex) => {
     lre.matchAllRepeat();
-    const group = lre.match("cat is (.*) and (.*)");
+    const group = lre.match("dog is (.*) and (.*)");
+    lre.unmatchRepeat("color is .*");
+    lre.unmatchRepeat("cat is .*");
     lre.matchAllRepeat();
     lre.match("color is {}", "<20s", [group.at(2)]); // at (2) is wrong
   });
