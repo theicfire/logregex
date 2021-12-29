@@ -1,5 +1,6 @@
 const DEBUG = false;
 type GroupsID = number;
+let globalId = 0;
 
 class ReGroup {
   public id: GroupsID;
@@ -29,12 +30,6 @@ class ReGroups {
     return this.id;
   }
 }
-
-class RePattern {
-  constructor(pattern?: string, groups?: ReGroup[]) {}
-}
-
-let globalId = 0;
 
 class ReNode {
   public finished: boolean = false;
@@ -235,7 +230,6 @@ export class LogRegex {
   public edges: Map<number, ReEdge[]> = new Map();
   public startNode: ReNode;
   private currentNode: ReNode;
-  private prevNode: ReNode | undefined;
   constructor(description: string) {
     this.description = description;
     const new_node = this.addNode();
@@ -281,7 +275,6 @@ export class LogRegex {
     );
     this.edges.get(this.currentNode.getId())?.push(forward_edge);
 
-    this.prevNode = this.currentNode;
     this.currentNode = new_node;
 
     return forward_edge.getCaptureGroups();
@@ -335,7 +328,6 @@ export class LogRegex {
       .get(this.currentNode.getId())
       ?.push(ReEdge.buildEpsilonEdge(this.currentNode, s2));
 
-    this.prevNode = this.currentNode;
     this.currentNode = s2;
   }
 
