@@ -1,18 +1,18 @@
 const DEBUG = false;
-type GroupsID = number;
+type MatchId = number;
 let globalNodeNum = 0;
 
 class ReGroup {
-  public id: GroupsID;
+  public id: MatchId;
   public index: number;
-  constructor(id: GroupsID, index: number) {
+  constructor(id: MatchId, index: number) {
     this.id = id;
     this.index = index;
   }
 }
 
 class SingleMatch {
-  private id: GroupsID = 0;
+  private id: MatchId = 0;
   private maxGroups: number;
   constructor(maxGroups: number) {
     this.id = Math.floor(Math.random() * 100000);
@@ -26,7 +26,7 @@ class SingleMatch {
     return new ReGroup(this.getId(), index);
   }
 
-  getId(): GroupsID {
+  getId(): MatchId {
     return this.id;
   }
 }
@@ -366,7 +366,7 @@ export class FileHandler {
 interface MatchState {
   lineNum: number;
   incomingEdge: ReEdge;
-  capture: Record<GroupsID, string[]>; // group identifier -> string[] (capture)
+  capture: Record<MatchId, string[]>; // group identifier -> string[] (capture)
 }
 
 export class Matcher {
