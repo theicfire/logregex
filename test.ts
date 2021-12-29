@@ -80,19 +80,19 @@ function ex7() {
 function ex1() {
   const lre = new LogRegex("Duplicate Resize");
   lre.matchAllRepeat();
-  const group = lre.match(
+  const match = lre.match(
     "Calling onWindowResize for window (.*) to origin .* on screen .* with size (.*)"
   );
   lre.unmatchRepeat("Calling onWindowResize for window {} to", "<20s", [
-    group.at(1),
+    match.at(1),
   ]);
   lre.match(
     "Calling onWindowResize for window {} to origin .* on screen .* with size {}",
     "<20s",
-    [group.at(1), group.at(2)]
+    [match.at(1), match.at(2)]
   );
   lre.matchAllRepeat();
-  lre.match("Gray screen for {}", "<20s", [group.at(1)]);
+  lre.match("Gray screen for {}", "<20s", [match.at(1)]);
   const matcher = new Matcher();
   matcher.execute(["/path/to/file.log"], [lre]);
 }
@@ -217,47 +217,47 @@ function ex9() {
   const true_tests = [];
   true_tests.push((lre: LogRegex) => {
     lre.matchAllRepeat();
-    const group = lre.match("dog is (.*) and (.*)");
+    const match = lre.match("dog is (.*) and (.*)");
     lre.matchAllRepeat();
-    lre.match("color is {}", "<20s", [group.at(1)]);
+    lre.match("color is {}", "<20s", [match.at(1)]);
   });
   true_tests.push((lre: LogRegex) => {
     lre.matchAllRepeat();
-    const group = lre.match("cat is (.*) and (.*)");
+    const match = lre.match("cat is (.*) and (.*)");
     lre.matchAllRepeat();
-    lre.match("color is {}", "<80s", [group.at(1)]);
+    lre.match("color is {}", "<80s", [match.at(1)]);
   });
   true_tests.push((lre: LogRegex) => {
     lre.matchAllRepeat();
     lre.match("dog is (.*) and (.*)");
     lre.matchAllRepeat();
-    const group2 = lre.match("cat is (.*) and (.*)");
+    const match2 = lre.match("cat is (.*) and (.*)");
     lre.matchAllRepeat();
-    lre.match("color is {}", "<20s", [group2.at(1)]);
+    lre.match("color is {}", "<20s", [match2.at(1)]);
     lre.matchAllRepeat();
-    lre.match("size is {}", "<20s", [group2.at(0)]);
+    lre.match("size is {}", "<20s", [match2.at(0)]);
   });
   true_tests.push((lre: LogRegex) => {
     lre.matchAllRepeat();
-    const group = lre.match("color is (.*)");
+    const match = lre.match("color is (.*)");
     lre.matchAllRepeat();
-    lre.match("color is {}", "<20s", [group.at(0)]);
+    lre.match("color is {}", "<20s", [match.at(0)]);
   });
 
   const false_tests = [];
   false_tests.push((lre: LogRegex) => {
     lre.matchAllRepeat();
-    const group = lre.match("dog is (.*) and (.*)");
+    const match = lre.match("dog is (.*) and (.*)");
     lre.matchAllRepeat();
-    lre.match("color is {}", "<20s", [group.at(2)]); // at (2) is wrong
+    lre.match("color is {}", "<20s", [match.at(2)]); // at (2) is wrong
   });
   false_tests.push((lre: LogRegex) => {
     lre.matchAllRepeat();
-    const group = lre.match("dog is (.*) and (.*)");
+    const match = lre.match("dog is (.*) and (.*)");
     lre.unmatchRepeat("color is .*");
     lre.unmatchRepeat("cat is .*");
     lre.matchAllRepeat();
-    lre.match("color is {}", "<20s", [group.at(2)]); // at (2) is wrong
+    lre.match("color is {}", "<20s", [match.at(2)]); // at (2) is wrong
   });
 
   const file = new FileHandler(contents.split("\n"));
@@ -283,10 +283,10 @@ function ex9() {
 
   {
     const lre = new LogRegex("Blah");
-    const group = lre.match("dog is (.*) and (.*)");
+    const match = lre.match("dog is (.*) and (.*)");
     let hitException = false;
     try {
-      group.at(3);
+      match.at(3);
     } catch (e) {
       hitException = true;
     }
@@ -310,11 +310,11 @@ Expecting frame with props:1920x1058x1
 `;
   const lre = new LogRegex("Blah");
   lre.matchAllRepeat();
-  const group = lre.match("Calling onWindowResize for window ([^ ]*)");
+  const match = lre.match("Calling onWindowResize for window ([^ ]*)");
   lre.matchAllRepeat();
-  lre.match("Calling onWindowResize for window {}", "<20s", [group.at(0)]);
+  lre.match("Calling onWindowResize for window {}", "<20s", [match.at(0)]);
   lre.matchAllRepeat();
-  lre.match("Window {} info:", "<20s", [group.at(0)]);
+  lre.match("Window {} info:", "<20s", [match.at(0)]);
   lre.match("Expecting frame with");
   lre.match("User is seeing a gray screen!");
   const file = new FileHandler(contents.split("\n"));

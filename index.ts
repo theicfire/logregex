@@ -1,6 +1,6 @@
 const DEBUG = false;
 type GroupsID = number;
-let globalId = 0;
+let globalNodeNum = 0;
 
 class ReGroup {
   public id: GroupsID;
@@ -11,7 +11,7 @@ class ReGroup {
   }
 }
 
-class ReGroups {
+class SingleMatch {
   private id: GroupsID = 0;
   private maxGroups: number;
   constructor(maxGroups: number) {
@@ -23,26 +23,26 @@ class ReGroups {
     if (index >= this.maxGroups) {
       throw new Error(`The maximum index for this group is ${this.maxGroups}`);
     }
-    return new ReGroup(this.getGroupsID(), index);
+    return new ReGroup(this.getId(), index);
   }
 
-  getGroupsID(): GroupsID {
+  getId(): GroupsID {
     return this.id;
   }
 }
 
 class ReNode {
   public finished: boolean = false;
-  private id: number;
+  private nodeNum: number;
   constructor(finished?: boolean) {
     if (finished) {
       this.finished = finished;
     }
-    this.id = globalId++;
+    this.nodeNum = globalNodeNum++;
   }
 
-  public getId(): number {
-    return this.id;
+  public getNodeNum(): number {
+    return this.nodeNum;
   }
 }
 
@@ -60,7 +60,7 @@ class ReEdge {
   public pattern: string[] | undefined; // will generate "capture outputs"
   public timePattern: string | undefined;
   public groups: ReGroup[] | undefined = []; // "capture inputs"
-  public captureGroups: ReGroups;
+  private singleMatchId: number = 0;
 
   constructor(
     src: ReNode,
@@ -82,19 +82,10 @@ class ReEdge {
       this.type = type;
     }
     this.matchInverse = matchInverse === true;
-    this.captureGroups = new ReGroups(this.getNumPatternGroups(pattern));
   }
 
-  private getNumPatternGroups(pattern?: string): number {
-    if (!pattern) {
-      return 0;
-    }
-
-    return pattern.split("(.*)").length; // TODO hacky hardcode
-  }
-
-  public getCaptureGroups(): ReGroups {
-    return this.captureGroups;
+  public setSingleMatchId(id: number) {
+    this.singleMatchId = id;
   }
 
   private generateRegex(matchState: MatchState): RegExp {
@@ -168,7 +159,9 @@ class ReEdge {
       }
       matches.shift(); // remove the full match
       // console.log("add to capture: ", this.captureGroups.getGroupsID());
-      matchState.capture[this.captureGroups.getGroupsID()] = matches;
+      if (this.singleMatchId !== 0) {
+        matchState.capture[this.singleMatchId] = matches;
+      }
       return {
         lineNum: matchState.lineNum + 1,
         incomingEdge: this,
@@ -220,7 +213,7 @@ class ReEdge {
   public str(): string {
     return `Edge (pattern: ${this.pattern}, type: ${
       this.type
-    }) to ${this.dest.getId()}`;
+    }) to ${this.dest.getNodeNum()}`;
   }
 }
 
@@ -239,8 +232,8 @@ export class LogRegex {
 
   private addNode() {
     const new_node = new ReNode();
-    this.edges.set(new_node.getId(), []);
-    this.nodes.set(new_node.getId(), new_node);
+    this.edges.set(new_node.getNodeNum(), []);
+    this.nodes.set(new_node.getNodeNum(), new_node);
     if (this.currentNode) {
       this.currentNode.finished = false;
     }
@@ -254,14 +247,22 @@ export class LogRegex {
       this.currentNode,
       timePattern
     );
-    this.edges.get(this.currentNode.getId())?.push(skip_allowed_edge);
+    this.edges.get(this.currentNode.getNodeNum())?.push(skip_allowed_edge);
+  }
+
+  private getNumPatternGroups(pattern?: string): number {
+    if (!pattern) {
+      return 0;
+    }
+
+    return pattern.split("(.*)").length; // TODO hacky hardcode
   }
 
   public match(
     pattern: string,
     timePattern?: string,
     groups?: ReGroup[]
-  ): ReGroups {
+  ): SingleMatch {
     const new_node = this.addNode();
 
     const forward_edge = new ReEdge(
@@ -273,11 +274,14 @@ export class LogRegex {
       ReEdgeType.CONSUME,
       false
     );
-    this.edges.get(this.currentNode.getId())?.push(forward_edge);
+    this.edges.get(this.currentNode.getNodeNum())?.push(forward_edge);
 
     this.currentNode = new_node;
 
-    return forward_edge.getCaptureGroups();
+    const singleMatch = new SingleMatch(this.getNumPatternGroups(pattern));
+    forward_edge.setSingleMatchId(singleMatch.getId());
+
+    return singleMatch;
   }
 
   /**
@@ -305,7 +309,7 @@ export class LogRegex {
 
     // Forward edge
     this.edges
-      .get(this.currentNode.getId())
+      .get(this.currentNode.getNodeNum())
       ?.push(
         new ReEdge(
           this.currentNode,
@@ -320,12 +324,12 @@ export class LogRegex {
 
     // Can repeat .. go back to the previous state.
     this.edges
-      .get(s1.getId())
+      .get(s1.getNodeNum())
       ?.push(ReEdge.buildEpsilonEdge(s1, this.currentNode));
 
     // Doesn't need to have an unmatch happen, not even 1 times.
     this.edges
-      .get(this.currentNode.getId())
+      .get(this.currentNode.getNodeNum())
       ?.push(ReEdge.buildEpsilonEdge(this.currentNode, s2));
 
     this.currentNode = s2;
@@ -394,14 +398,14 @@ export class Matcher {
         return true;
       }
 
-      const edges = logRe.edges.get(node.getId());
+      const edges = logRe.edges.get(node.getNodeNum());
       if (!edges) {
         console.log("impossible2");
         return false;
       }
       if (DEBUG) {
         console.log(
-          `\n${fromNode.getId()} -> ${node.getId()}. Input: #${
+          `\n${fromNode.getNodeNum()} -> ${node.getNodeNum()}. Input: #${
             matchState.lineNum
           }: "${contents.getLine(matchState.lineNum)}", Iterate through ${
             edges.length
