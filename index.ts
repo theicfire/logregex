@@ -727,6 +727,36 @@ function ex9() {
   }
 }
 
+function ex10() {
+  const contents = `
+  2021-11-22T19:18:47.940Z [94377:c++] ::(anonymous class)::operator()() const - [gs] Making window 0x48004b5 gray. Expecting frame with 1920x1058@1
+2021-11-22T19:18:47.941Z [94377:c++]  const - Calling onWindowResize for window 0x48004b5 to origin (0, 23) on screen 722474267 with size 1920x1057@1
+2021-11-22T19:18:47.942Z [94377:js]  - call_window_resize for 0x48004b5 with 1920x1057@1
+2021-11-22T19:18:51.591Z [94377:c++] info: window_delegate.mm:173:auto WindowDelegate::windowDidMove:::(anonymous class)::operator()() const - Calling onWindowMove for 0x48004b5 (33, 28, 722474524)
+2021-11-22T19:18:51.641Z [94377:c++]  const - Calling onWindowResize for window 0x48004b5 to origin (0, 23) on screen 722474524 with size 1920x1057@1
+2021-11-22T19:18:51.642Z [94377:js] info: index.js:1:Client.call_window_resize - call_window_resize for 0x48004b5 with 1920x1057@1
+2021-11-22T19:18:56.854Z [94377:c++] error: decode_render.mm:1013:fast::DecodeRender::Context::didDecompress - window 75498677: Error decompressing frame at time: 0 error: -12909 infoFlags: 0
+2021-11-22T19:18:56.867Z [94377:c++] info: metal_renderer.cpp:301:log_gray_screen@renderer - Window 0x48004b5 info:
+Expecting frame with props:1920x1058x1
+2021-11-22T19:18:56.869Z [94377:c++] warning: metal_renderer.cpp:320:log_gray_screen@renderer - [Sentry] User is seeing a gray screen! network_poor_condition: false, encoder_resetting: false
+2021-11-22T19:18:56.869Z [94377:c++] error: decode_render.mm:1013:fast::DecodeRender::Context::didDecompress - window 75498677: Error decompressing frame at time: 0 error: -12909 infoFlags: 0
+`;
+  const lre = new LogRegex("Blah");
+  lre.matchAllRepeat();
+  const group = lre.match("Calling onWindowResize for window ([^ ]*)");
+  lre.matchAllRepeat();
+  lre.match("Calling onWindowResize for window {}", "<20s", [group.at(0)]);
+  lre.matchAllRepeat();
+  lre.match("Window {} info:", "<20s", [group.at(0)]);
+  lre.match("Expecting frame with");
+  lre.match("User is seeing a gray screen!");
+  const file = new ChaseFile(contents.split("\n"));
+  const matcher = new Matcher();
+  if (!matcher.match(file, lre)) {
+    console.log("Error: failed ex10");
+  }
+}
+
 function generateExample() {
   const letters = ["a", "b", "c"];
   const isMatches = [true, false];
@@ -790,5 +820,6 @@ ex7();
 ex8();
 runManyExamples();
 ex9();
+ex10();
 
 console.log("Done tests");
