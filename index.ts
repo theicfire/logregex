@@ -116,9 +116,8 @@ class ReEdge {
       // Can't handle missing input, but we *can* if epsilon, which consumes nothing
       if (this.type === ReEdgeType.EPSILON) {
         return {
-          lineNum: matchState.lineNum,
+          ...matchState,
           incomingEdge: this,
-          capture: matchState.capture,
         };
       } else {
         return null;
@@ -126,16 +125,15 @@ class ReEdge {
     }
     if (this.type === ReEdgeType.CONSUME_ANY) {
       return {
+        ...matchState,
         lineNum: matchState.lineNum + 1,
         incomingEdge: this,
-        capture: matchState.capture,
       };
     }
     if (this.type === ReEdgeType.EPSILON) {
       return {
-        lineNum: matchState.lineNum,
+        ...matchState,
         incomingEdge: this,
-        capture: matchState.capture,
       };
     }
     if (!this.pattern) {
@@ -149,9 +147,9 @@ class ReEdge {
         return null;
       }
       return {
+        ...matchState,
         lineNum: matchState.lineNum + 1,
         incomingEdge: this,
-        capture: matchState.capture,
       };
     } else {
       if (!matches) {
@@ -163,9 +161,9 @@ class ReEdge {
         matchState.capture[this.singleMatchId] = matches;
       }
       return {
+        ...matchState,
         lineNum: matchState.lineNum + 1,
         incomingEdge: this,
-        capture: matchState.capture,
       };
     }
     // TODO handle timestamps too, I think here..
