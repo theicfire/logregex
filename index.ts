@@ -670,6 +670,12 @@ function ex9() {
     lre.matchAllRepeat();
     lre.match("size is {}", "<20s", [group2.at(0)]);
   });
+  true_tests.push((lre: LogRegex) => {
+    lre.matchAllRepeat();
+    const group = lre.match("color is (.*)");
+    lre.matchAllRepeat();
+    lre.match("color is {}", "<20s", [group.at(0)]);
+  });
 
   const false_tests = [];
   false_tests.push((lre: LogRegex) => {
