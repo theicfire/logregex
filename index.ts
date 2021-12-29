@@ -667,6 +667,7 @@ function ex9() {
     const group2 = lre.match("cat is (.*) and (.*)");
     lre.matchAllRepeat();
     lre.match("color is {}", "<20s", [group2.at(1)]);
+    lre.matchAllRepeat();
     lre.match("size is {}", "<20s", [group2.at(0)]);
   });
 
