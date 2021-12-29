@@ -122,7 +122,7 @@ class ReEdge {
   }
 
   public handle(
-    contents: ChaseFile,
+    contents: FileHandler,
     matchState: MatchState
   ): MatchState | null {
     const line = contents.getLine(matchState.lineNum);
@@ -349,8 +349,7 @@ export class LogRegex {
   }
 }
 
-// TODO rename
-export class ChaseFile {
+export class FileHandler {
   public lines: string[];
   constructor(lines: string[]) {
     this.lines = lines;
@@ -377,7 +376,7 @@ interface MatchState {
 export class Matcher {
   public execute(file_paths: string[], regexes: LogRegex[]) {}
 
-  public match(contents: ChaseFile, logRe: LogRegex) {
+  public match(contents: FileHandler, logRe: LogRegex) {
     const startEdge = new ReEdge(
       logRe.startNode,
       logRe.startNode,

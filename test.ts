@@ -1,6 +1,6 @@
-import { ChaseFile, LogRegex, Matcher } from "./index";
+import { FileHandler, LogRegex, Matcher } from "./index";
 function ex2() {
-  const file = new ChaseFile("a,b,b,b,c,a,d".split(","));
+  const file = new FileHandler("a,b,b,b,c,a,d".split(","));
   const lre = new LogRegex("Blah");
   lre.matchAllRepeat();
   lre.match("b");
@@ -13,7 +13,7 @@ function ex2() {
 }
 
 function ex3() {
-  const file = new ChaseFile("a,b,c,a,f,f,c".split(","));
+  const file = new FileHandler("a,b,c,a,f,f,c".split(","));
   const lre = new LogRegex("Blah");
   lre.matchAllRepeat();
   lre.match("a");
@@ -26,7 +26,7 @@ function ex3() {
 }
 
 function ex4() {
-  const file = new ChaseFile("a,b,c".split(","));
+  const file = new FileHandler("a,b,c".split(","));
   const lre = new LogRegex("Blah");
   lre.matchAllRepeat();
   lre.match("a");
@@ -39,7 +39,7 @@ function ex4() {
 }
 
 function ex5() {
-  const file = new ChaseFile("a,a,a,b,a,a,b,c".split(","));
+  const file = new FileHandler("a,a,a,b,a,a,b,c".split(","));
   const lre = new LogRegex("Blah");
   lre.matchAllRepeat();
   lre.match("a");
@@ -52,7 +52,7 @@ function ex5() {
 }
 
 function ex6() {
-  const file = new ChaseFile("a,c".split(","));
+  const file = new FileHandler("a,c".split(","));
   const lre = new LogRegex("Blah");
   lre.matchAllRepeat();
   lre.match("a");
@@ -65,7 +65,7 @@ function ex6() {
 }
 
 function ex7() {
-  const file = new ChaseFile("a,a,a,b,c".split(","));
+  const file = new FileHandler("a,a,a,b,c".split(","));
   const lre = new LogRegex("Blah");
   lre.matchAllRepeat();
   lre.match("a");
@@ -177,7 +177,7 @@ function ex8() {
     lre.match(s3);
   });
 
-  const file = new ChaseFile(contents.split("\n"));
+  const file = new FileHandler(contents.split("\n"));
   const matcher = new Matcher();
 
   for (const [loc, test] of true_tests.entries()) {
@@ -260,7 +260,7 @@ function ex9() {
     lre.match("color is {}", "<20s", [group.at(2)]); // at (2) is wrong
   });
 
-  const file = new ChaseFile(contents.split("\n"));
+  const file = new FileHandler(contents.split("\n"));
   const matcher = new Matcher();
 
   for (const [loc, test] of true_tests.entries()) {
@@ -317,7 +317,7 @@ Expecting frame with props:1920x1058x1
   lre.match("Window {} info:", "<20s", [group.at(0)]);
   lre.match("Expecting frame with");
   lre.match("User is seeing a gray screen!");
-  const file = new ChaseFile(contents.split("\n"));
+  const file = new FileHandler(contents.split("\n"));
   const matcher = new Matcher();
   if (!matcher.match(file, lre)) {
     console.log("Error: failed ex10");
@@ -362,7 +362,7 @@ function generateExample() {
   }
   const matcher = new Matcher();
   const expected_match = new RegExp(regexString).test(lines.join(""));
-  const does_match = matcher.match(new ChaseFile(lines), lre);
+  const does_match = matcher.match(new FileHandler(lines), lre);
   if (expected_match !== does_match) {
     console.log(`\n\n\nFail for ${regexString}`);
     console.log(`${codeString}`);
