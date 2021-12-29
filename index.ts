@@ -636,7 +636,8 @@ function ex9() {
   const contents = `
   T00 dog is big and black
   T40 color is black
-  T60 dog is big and black
+  T60 cat is small and white
+  T40 color is orange
   `;
   const s1 = "dog is (.*) and (.*)";
   const s2 = "size is {}";
@@ -654,6 +655,12 @@ function ex9() {
   false_tests.push((lre: LogRegex) => {
     lre.matchAllRepeat();
     const group = lre.match("dog is (.*) and (.*)");
+    lre.matchAllRepeat();
+    lre.match("color is {}", "<20s", [group.at(2)]); // at (2) is wrong
+  });
+  false_tests.push((lre: LogRegex) => {
+    lre.matchAllRepeat();
+    const group = lre.match("cat is (.*) and (.*)");
     lre.matchAllRepeat();
     lre.match("color is {}", "<20s", [group.at(2)]); // at (2) is wrong
   });
