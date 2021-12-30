@@ -106,7 +106,7 @@ The Epsilon character (ε) represents an edge that can be traversed without incr
 The API is currently minimal, but useful. 
 
 Let's first look at `class SingleMatch`:
-```
+```typescript
   /**
    * Gets a "reference" to a captured group.
    *
@@ -115,7 +115,7 @@ Let's first look at `class SingleMatch`:
    */
   public at(index: number): ReGroup
 ```
-```
+```typescript
   /**
    * Gets a "reference" to a matched time
    *
@@ -126,7 +126,7 @@ Let's first look at `class SingleMatch`:
 ```
 
 The other interesting class is `LogRegex`:
-```
+```typescript
   /**
    * Match zero or more lines in an ungreedy manner, unless the time requirement
    * is not met. "Ungreedy" means that this does not necessarily consume until
@@ -137,7 +137,7 @@ The other interesting class is `LogRegex`:
    */
   public matchAllRepeat(timeComparison?: TimeComparison)
 ```
-```
+```typescript
   /**
    * Match a single line.
    *
@@ -152,7 +152,7 @@ The other interesting class is `LogRegex`:
     groups?: ReGroup[]
   ): SingleMatch
 ```
-```
+```typescript
   /**
    * Find zero or more lines that do not match `pattern` in an ungreedy manner.
    * "Ungreedy" means that this does not necessarly consume until it finds a
@@ -169,5 +169,5 @@ The other interesting class is `LogRegex`:
     pattern: string,
     timeComparison?: TimeComparison,
     groups?: ReGroup[]
-  ) {
+  )
 ```
