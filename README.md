@@ -60,7 +60,7 @@ There are two steps involved:
 ## Building the graph
 
 Here's what the graph looks like for the example above:
-[simple graph](./simple_graph.png)
+![simple graph](./simple_graph.png)
 
 
 ## Search over the graph
@@ -97,7 +97,7 @@ This should match a file that:
 - BUT, there should be no line between these two lines that contains a "b"
 
 Here's how we model it in a graph:
-[unmatch graph](./unmatch_graph.png)
+![unmatch graph](./unmatch_graph.png)
 
 
 The Epsilon character (ε) represents an edge that can be traversed without incrementing the line number. As an example, we can move along the `S2 -> S4` edge with only changing the `Location` in the graph, and nothing else about the state. I'll leave it as an exercise to the reader on how the above graph represents this example. Note that `unmatchRepeat` is "ungreedy" in regex terms.
