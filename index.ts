@@ -58,6 +58,12 @@ class SingleMatch {
     this.maxGroups = maxGroups;
   }
 
+  /**
+   * Gets a "reference" to a captured group.
+   *
+   * @param index The captured index, starting at 0.
+   * @returns The purpose of this is to be put into a `LogRegex.match` call.
+   */
   public at(index: number): ReGroup {
     if (index >= this.maxGroups) {
       throw new Error(`The maximum index for this group is ${this.maxGroups}`);
@@ -65,6 +71,12 @@ class SingleMatch {
     return new ReGroup(this.getId(), index);
   }
 
+  /**
+   * Gets a "reference" to a matched time
+   *
+   * @param timePattern "ex: <20s" meaning "with respect to this match, match another line that is within 20s". Only seconds are supported. Only < and > are supported.
+   * @returns The purpose of this is to put into a `LogRegex.match` call.
+   */
   public timeComparison(timePattern: string) {
     return new TimeComparison(this.getId(), timePattern);
   }
@@ -312,7 +324,14 @@ export class LogRegex {
     return pattern.split("(.*)").length; // TODO hacky hardcode
   }
 
-  // Ungreedy! This does not consume until it does not find a match, it *can* consume until it does not find a match.
+  /**
+   * Match zero or more lines in an ungreedy manner, unless the time requirement
+   * is not met. "Ungreedy" means that this does not necessarily consume until
+   * it does not find a match. It merely *can* consume until it does not find a
+   * match.
+   *
+   * @param timeComparison An optional parameter that is the return value of SingleMatch.timeComparison()
+   */
   public matchAllRepeat(timeComparison?: TimeComparison) {
     const skip_allowed_edge = ReEdge.buildTimedAllEdge(
       this.currentNode,
@@ -322,6 +341,14 @@ export class LogRegex {
     this.edges.get(this.currentNode.getNodeNum())?.push(skip_allowed_edge);
   }
 
+  /**
+   * Match a single line.
+   *
+   * @param pattern A regex pattern to match.
+   * @param timeComparison An optional parameter that is the return value of SingleMatch.timeComparison()
+   * @param groups An optional array. Each entry is constructed from the return value of SingleMatch.at()
+   * @returns A SingleMatch
+   */
   public match(
     pattern: string,
     timeComparison?: TimeComparison,
@@ -349,10 +376,11 @@ export class LogRegex {
   }
 
   /**
-   * Can have many "unmatching" matches. Should not skip otherwise.
-   * Ungreedy! This does not consume until it finds a match, it *can* consume until it finds a match.
+   * Find zero or more lines that do not match `pattern` in an ungreedy manner.
+   * "Ungreedy" means that this does not necessarly consume until it finds a
+   * match. It merely *can* consume until it finds a match.
    *
-   * Building the following graph. this.currentNode is initially S0.
+   * The graph this builds is confusing, so I've documented it here. this.currentNode is initially S0.
    *         ε
    *   ┌──────────────┐
    *   ▼              │
@@ -362,6 +390,13 @@ export class LogRegex {
    *   │                          ▲
    *   └──────────────────────────┘
    *                ε
+   *
+   * @param pattern A regex pattern to NOT match.
+   * @param timeComparison An optional parameter that is the return value of
+   *  SingleMatch.timeComparison(). If a line does not match this time
+   *  comparison, it is not matched. That is, the logic inversion is only for the
+   *  match, but not for the time.
+   * @param groups An optional array. Each entry is constructed from the return value of SingleMatch.at()
    */
   public unmatchRepeat(
     pattern: string,
