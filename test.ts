@@ -211,6 +211,7 @@ function ex9() {
   2021-11-22T19:18:47.940Z color is purple
   2021-11-22T19:18:47.940Z color is white
   2021-11-22T19:18:47.940Z size is small
+  2021-11-22T19:55:47.940Z Many minutes later
   `;
   const s1 = "dog is (.*) and (.*)";
   const s2 = "size is {}";
@@ -246,6 +247,16 @@ function ex9() {
     lre.match("color is {}", match.timeComparison("<20s"), [match.at(0)]);
   });
 
+  true_tests.push((lre: LogRegex) => {
+    lre.matchAllRepeat();
+    const match = lre.match("dog is (.*) and (.*)");
+    // Shows that unmatch is not greedy. We decide to *not* skip the second line.
+    lre.unmatchRepeat("color is .*");
+    lre.unmatchRepeat("cat is .*");
+    lre.matchAllRepeat();
+    lre.match("color is {}", match.timeComparison("<20s"), [match.at(1)]);
+  });
+
   const false_tests = [];
   false_tests.push((lre: LogRegex) => {
     lre.matchAllRepeat();
@@ -256,10 +267,17 @@ function ex9() {
   false_tests.push((lre: LogRegex) => {
     lre.matchAllRepeat();
     const match = lre.match("dog is (.*) and (.*)");
-    lre.unmatchRepeat("color is .*");
-    lre.unmatchRepeat("cat is .*");
+    // Skip next two lines, so that "cat is black" no longer exists in the search
+    lre.unmatchRepeat("color is");
+    lre.match("cat is");
     lre.matchAllRepeat();
-    lre.match("color is {}", match.timeComparison("<20s"), [match.at(2)]); // at (2) is wrong
+    lre.match("color is {}", match.timeComparison("<20s"), [match.at(1)]);
+  });
+  false_tests.push((lre: LogRegex) => {
+    lre.matchAllRepeat();
+    const match = lre.match("dog is");
+    lre.matchAllRepeat();
+    lre.match("Many minutes later", match.timeComparison("<20s"));
   });
 
   const file = new FileHandler(contents.split("\n"));
@@ -306,7 +324,7 @@ function ex10() {
 2021-11-22T19:18:51.642Z [94377:js] info: index.js:1:Client.call_window_resize - call_window_resize for 0x48004b5 with 1920x1057@1
 2021-11-22T19:18:56.854Z [94377:c++] error: decode_render.mm:1013:fast::DecodeRender::Context::didDecompress - window 75498677: Error decompressing frame at time: 0 error: -12909 infoFlags: 0
 2021-11-22T19:18:56.867Z [94377:c++] info: metal_renderer.cpp:301:log_gray_screen@renderer - Window 0x48004b5 info:
-2021-11-22T19:18:56.867Z Expecting frame with props:1920x1058x1
+Expecting frame with props:1920x1058x1
 2021-11-22T19:18:56.869Z [94377:c++] warning: metal_renderer.cpp:320:log_gray_screen@renderer - [Sentry] User is seeing a gray screen! network_poor_condition: false, encoder_resetting: false
 2021-11-22T19:18:56.869Z [94377:c++] error: decode_render.mm:1013:fast::DecodeRender::Context::didDecompress - window 75498677: Error decompressing frame at time: 0 error: -12909 infoFlags: 0
 `;

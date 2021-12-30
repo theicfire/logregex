@@ -312,6 +312,7 @@ export class LogRegex {
     return pattern.split("(.*)").length; // TODO hacky hardcode
   }
 
+  // Ungreedy! This does not consume until it does not find a match, it *can* consume until it does not find a match.
   public matchAllRepeat(timeComparison?: TimeComparison) {
     const skip_allowed_edge = ReEdge.buildTimedAllEdge(
       this.currentNode,
@@ -349,6 +350,7 @@ export class LogRegex {
 
   /**
    * Can have many "unmatching" matches. Should not skip otherwise.
+   * Ungreedy! This does not consume until it finds a match, it *can* consume until it finds a match.
    *
    * Building the following graph. this.currentNode is initially S0.
    *         ε
