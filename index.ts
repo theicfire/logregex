@@ -11,6 +11,45 @@ class ReGroup {
   }
 }
 
+enum TimeComparisonOperator {
+  GT,
+  LT,
+}
+export class TimeComparison {
+  public id: MatchId;
+  public timePattern: {
+    operator: TimeComparisonOperator;
+    delta__s: number;
+    unit: string;
+  };
+  constructor(id: MatchId, timePattern: string) {
+    this.id = id;
+    this.timePattern = this.parseTimePattern(timePattern);
+  }
+  private parseTimePattern(timePattern: string) {
+    const parts = timePattern.match(new RegExp(/([<>])(\d+)(\w)/));
+    const operator =
+      parts[1] == "<" ? TimeComparisonOperator.LT : TimeComparisonOperator.GT;
+    const delta__s = parseInt(parts[2]);
+    const unit = parts[3];
+    if (unit !== "s") {
+      throw new Error("only seconds supported");
+    }
+    return { operator, delta__s, unit };
+  }
+  public isTimeInBounds(matchState: MatchState, time: number): boolean {
+    if (this.timePattern.operator == TimeComparisonOperator.LT) {
+      return (
+        time < matchState.timeMap[this.id] + this.timePattern.delta__s * 1000
+      );
+    } else if (this.timePattern.operator == TimeComparisonOperator.GT) {
+      return (
+        time > matchState.timeMap[this.id] + this.timePattern.delta__s * 1000
+      );
+    }
+  }
+}
+
 class SingleMatch {
   private id: MatchId = 0;
   private maxGroups: number;
@@ -24,6 +63,10 @@ class SingleMatch {
       throw new Error(`The maximum index for this group is ${this.maxGroups}`);
     }
     return new ReGroup(this.getId(), index);
+  }
+
+  public timeComparison(timePattern: string) {
+    return new TimeComparison(this.getId(), timePattern);
   }
 
   getId(): MatchId {
@@ -58,7 +101,7 @@ class ReEdge {
   public type = ReEdgeType.CONSUME;
   public matchInverse = false;
   public pattern: string[] | undefined; // will generate "capture outputs"
-  public timePattern: string | undefined;
+  public timeComparison: TimeComparison | undefined;
   public groups: ReGroup[] | undefined = []; // "capture inputs"
   private singleMatchId: number = 0;
 
@@ -66,7 +109,7 @@ class ReEdge {
     src: ReNode,
     dest: ReNode,
     pattern?: string,
-    timePattern?: string,
+    timeComparison?: TimeComparison,
     groups?: ReGroup[],
     type?: ReEdgeType,
     matchInverse?: boolean
@@ -74,7 +117,7 @@ class ReEdge {
     if (pattern) {
       this.pattern = pattern.split("{}");
     }
-    this.timePattern = timePattern;
+    this.timeComparison = timeComparison;
     this.groups = groups;
     this.dest = dest;
     this.src = src;
@@ -101,7 +144,7 @@ class ReEdge {
     for (let i = 0; i < this.groups.length; i++) {
       regexString +=
         this.pattern[i] +
-        matchState.capture[this.groups[i].id][this.groups[i].index];
+        matchState.captureMap[this.groups[i].id][this.groups[i].index];
     }
     regexString += this.pattern[this.pattern.length - 1];
     return new RegExp(regexString);
@@ -109,7 +152,8 @@ class ReEdge {
 
   public handle(
     contents: FileHandler,
-    matchState: MatchState
+    matchState: MatchState,
+    parseTime: ParseTime
   ): MatchState | null {
     const line = contents.getLine(matchState.lineNum);
     if (line === null) {
@@ -155,10 +199,19 @@ class ReEdge {
       if (!matches) {
         return null;
       }
+
+      if (this.timeComparison) {
+        const timeAtLine = parseTime(line);
+        if (!this.timeComparison.isTimeInBounds(matchState, timeAtLine)) {
+          return null;
+        }
+      }
+
       matches.shift(); // remove the full match
       // console.log("add to capture: ", this.captureGroups.getGroupsID());
       if (this.singleMatchId !== 0) {
-        matchState.capture[this.singleMatchId] = matches;
+        matchState.captureMap[this.singleMatchId] = matches;
+        matchState.timeMap[this.singleMatchId] = parseTime(line);
       }
       return {
         ...matchState,
@@ -173,13 +226,13 @@ class ReEdge {
   public static buildTimedAllEdge(
     src: ReNode,
     dest: ReNode,
-    timePattern?: string
+    timeComparison?: TimeComparison
   ): ReEdge {
     return new ReEdge(
       src,
       dest,
       undefined,
-      undefined,
+      timeComparison,
       undefined,
       ReEdgeType.CONSUME_ANY
     );
@@ -215,17 +268,29 @@ class ReEdge {
   }
 }
 
+type ParseTime = (line: string) => number;
+interface ILogRegexOptions {
+  description?: string;
+  parseTime?: ParseTime;
+}
+
 export class LogRegex {
-  private description: string;
   public nodes: Map<number, ReNode> = new Map();
   public edges: Map<number, ReEdge[]> = new Map();
   public startNode: ReNode;
   private currentNode: ReNode;
-  constructor(description: string) {
-    this.description = description;
+  public parseTime: ParseTime;
+
+  constructor(options?: ILogRegexOptions) {
+    this.parseTime = options?.parseTime || LogRegex.parseTimeDefault;
     const new_node = this.addNode();
     this.currentNode = new_node;
     this.startNode = new_node;
+  }
+
+  private static parseTimeDefault(line: string): number {
+    const ret = new Date(line.trim().split(" ")[0]).getTime();
+    return ret;
   }
 
   private addNode() {
@@ -239,15 +304,6 @@ export class LogRegex {
     return new_node;
   }
 
-  public matchAllRepeat(timePattern?: string) {
-    const skip_allowed_edge = ReEdge.buildTimedAllEdge(
-      this.currentNode,
-      this.currentNode,
-      timePattern
-    );
-    this.edges.get(this.currentNode.getNodeNum())?.push(skip_allowed_edge);
-  }
-
   private getNumPatternGroups(pattern?: string): number {
     if (!pattern) {
       return 0;
@@ -256,9 +312,18 @@ export class LogRegex {
     return pattern.split("(.*)").length; // TODO hacky hardcode
   }
 
+  public matchAllRepeat(timeComparison?: TimeComparison) {
+    const skip_allowed_edge = ReEdge.buildTimedAllEdge(
+      this.currentNode,
+      this.currentNode,
+      timeComparison
+    );
+    this.edges.get(this.currentNode.getNodeNum())?.push(skip_allowed_edge);
+  }
+
   public match(
     pattern: string,
-    timePattern?: string,
+    timeComparison?: TimeComparison,
     groups?: ReGroup[]
   ): SingleMatch {
     const new_node = this.addNode();
@@ -267,7 +332,7 @@ export class LogRegex {
       this.currentNode,
       new_node,
       pattern,
-      timePattern,
+      timeComparison,
       groups,
       ReEdgeType.CONSUME,
       false
@@ -298,7 +363,7 @@ export class LogRegex {
    */
   public unmatchRepeat(
     pattern: string,
-    timePattern?: string,
+    timeComparison?: TimeComparison,
     groups?: ReGroup[]
   ) {
     const s1 = this.addNode();
@@ -313,7 +378,7 @@ export class LogRegex {
           this.currentNode,
           s1,
           pattern,
-          timePattern,
+          timeComparison,
           groups,
           ReEdgeType.CONSUME,
           true
@@ -364,7 +429,8 @@ export class FileHandler {
 interface MatchState {
   lineNum: number;
   incomingEdge: ReEdge;
-  capture: Record<MatchId, string[]>; // group identifier -> string[] (capture)
+  captureMap: Record<MatchId, string[]>; // group identifier -> string[] (capture)
+  timeMap: Record<MatchId, number>; // group identifier -> time
 }
 
 export class Matcher {
@@ -380,7 +446,7 @@ export class Matcher {
       ReEdgeType.EPSILON
     );
     const lineNumStack: MatchState[] = [
-      { lineNum: 0, incomingEdge: startEdge, capture: {} },
+      { lineNum: 0, incomingEdge: startEdge, captureMap: {}, timeMap: {} },
     ];
     while (lineNumStack.length > 0) {
       //   console.log(`Nodes to go through (lineNumStack): ${lineNumStack.length}`);
@@ -411,7 +477,11 @@ export class Matcher {
         );
       }
       for (const outgoingEdge of edges) {
-        const nextMatchState = outgoingEdge.handle(contents, matchState);
+        const nextMatchState = outgoingEdge.handle(
+          contents,
+          matchState,
+          logRe.parseTime
+        );
         if (DEBUG) {
           console.log(
             `edge: ${outgoingEdge.str()} can_handle: ${nextMatchState !== null}`
