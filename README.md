@@ -47,6 +47,10 @@ This example showcases how LogRegex is more powerful for log searching over a re
 
 That's it! It's a tiny proof of concept, but I haven't seen this built anywhere else. I'm not sure how common this problem is for people, but I often have a need for a tool like this.
 
+# How to run
+The few dependencies are managed by yarn. I typically run this via node. Since this is typescript, `ts-node` is a quick way to get things running.
+- `yarn install`
+- `npx ts-node example.ts`
 
 # Implementation Details
 The implementation was inspired by a series of blog posts on [how to build a Regex Engine](https://kean.blog/post/lets-build-regex).
