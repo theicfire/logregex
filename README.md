@@ -101,3 +101,73 @@ Here's how we model it in a graph:
 
 
 The Epsilon character (ε) represents an edge that can be traversed without incrementing the line number. As an example, we can move along the `S2 -> S4` edge with only changing the `Location` in the graph, and nothing else about the state. I'll leave it as an exercise to the reader on how the above graph represents this example. Note that `unmatchRepeat` is "ungreedy" in regex terms.
+
+# API
+The API is currently minimal, but useful. 
+
+Let's first look at `class SingleMatch`:
+```
+  /**
+   * Gets a "reference" to a captured group.
+   *
+   * @param index The captured index, starting at 0.
+   * @returns The purpose of this is to be put into a `LogRegex.match` call.
+   */
+  public at(index: number): ReGroup
+```
+```
+  /**
+   * Gets a "reference" to a matched time
+   *
+   * @param timePattern "ex: <20s" meaning "with respect to this match, match another line that is within 20s". Only seconds are supported. Only < and > are supported.
+   * @returns The purpose of this is to put into a `LogRegex.match` call.
+   */
+  public timeComparison(timePattern: string)
+```
+
+The other interesting class is `LogRegex`:
+```
+  /**
+   * Match zero or more lines in an ungreedy manner, unless the time requirement
+   * is not met. "Ungreedy" means that this does not necessarily consume until
+   * it does not find a match. It merely *can* consume until it does not find a
+   * match.
+   *
+   * @param timeComparison An optional parameter that is the return value of SingleMatch.timeComparison()
+   */
+  public matchAllRepeat(timeComparison?: TimeComparison)
+```
+```
+  /**
+   * Match a single line.
+   *
+   * @param pattern A regex pattern to match.
+   * @param timeComparison An optional parameter that is the return value of SingleMatch.timeComparison()
+   * @param groups An optional array. Each entry is constructed from the return value of SingleMatch.at()
+   * @returns A SingleMatch
+   */
+  public match(
+    pattern: string,
+    timeComparison?: TimeComparison,
+    groups?: ReGroup[]
+  ): SingleMatch
+```
+```
+  /**
+   * Find zero or more lines that do not match `pattern` in an ungreedy manner.
+   * "Ungreedy" means that this does not necessarly consume until it finds a
+   * match. It merely *can* consume until it finds a match.
+   *
+   * @param pattern A regex pattern to NOT match.
+   * @param timeComparison An optional parameter that is the return value of
+   *  SingleMatch.timeComparison(). If a line does not match this time
+   *  comparison, it is not matched. That is, the logic inversion is only for the
+   *  match, but not for the time.
+   * @param groups An optional array. Each entry is constructed from the return value of SingleMatch.at()
+   */
+  public unmatchRepeat(
+    pattern: string,
+    timeComparison?: TimeComparison,
+    groups?: ReGroup[]
+  ) {
+```
