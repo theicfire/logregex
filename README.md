@@ -49,8 +49,6 @@ That's it! It's a tiny proof of concept, but I haven't seen this built anywhere 
 
 
 # Implementation Details
-I first want to point out that I've done no performance analysis on this tool. It's probably very slow for certain types of queries, or on really large logs. There are copious opportunities to speed this up.
-
 The implementation was inspired by a series of blog posts on [how to build a Regex Engine](https://kean.blog/post/lets-build-regex).
 
 There are two steps involved:
@@ -84,7 +82,7 @@ In this example, the first edge can be traversed but the second cannot. During e
 
 ## Graphs with `unmatchRepeat`
 Let's take another example:
-```
+```typescript
   const lre = new LogRegex();
   lre.match("a");
   lre.unmatchRepeat("b");
@@ -101,6 +99,9 @@ Here's how we model it in a graph:
 
 
 The Epsilon character (ε) represents an edge that can be traversed without incrementing the line number. As an example, we can move along the `S2 -> S4` edge with only changing the `Location` in the graph, and nothing else about the state. I'll leave it as an exercise to the reader on how the above graph represents this example. Note that `unmatchRepeat` is "ungreedy" in regex terms.
+
+## Performance
+I've done no performance analysis on this tool. It's probably very slow for certain types of queries, or on really large logs. There are copious opportunities to speed this up.
 
 # API
 The API is currently minimal, but useful. 
